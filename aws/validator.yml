@@ -12,15 +12,11 @@
       region: "{{ region }}"
       purge_rules_egress: false
       purge_rules: false
+      vpc_id: "{{ vpc_id | default('') }}"
       rules:
         - proto: tcp
           from_port: 22
           to_port: 22
-          cidr_ip: 0.0.0.0/0
-      rules_egress:
-        - proto: all
-          from_port: all
-          to_port: all
           cidr_ip: 0.0.0.0/0
   tags: validator
 
@@ -36,7 +32,6 @@
   tasks:
     - name: Launch instance
       ec2:
-        id: "{{ bootnode_instance_name }}"
         ec2_access_key: "{{ access_key }}"
         ec2_secret_key: "{{ secret_key }}"
         key_name: "{{ awskeypair_name }}"
@@ -48,7 +43,7 @@
         count: "{{ validator_count_instances }}"
         wait: yes
         region: "{{ region }}"
-        vpc_subnet_id: "{{ vpc_subnet_id }}"
+        vpc_subnet_id: "{{ vpc_subnet_id | default('') }}"
         volumes: "{{ volumes }}"
         assign_public_ip: yes
       register:   ec2
@@ -92,7 +87,6 @@
       when: associate_validator_elastic_ip == true
 
 - name: EC2 access setup
-  hosts: validator
-  become: True
+  hosts: localhost
   roles:
     - validator-access

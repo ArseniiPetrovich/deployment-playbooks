@@ -1,5 +1,9 @@
 ---
 
+- name: Get public IP
+  ipify_facts:
+  register: public_ip
+
 - name: Create node.toml
   template: src=node.toml.j2 dest={{ home }}/node.toml owner={{ username }} group={{ username }} mode=0644
 
@@ -19,7 +23,7 @@
 
 - name: install npm chain_explorer
   npm:
-    path: "{{ home }}//chain-explorer"
+    path: "{{ home }}/chain-explorer"
   become: true
   become_user: "{{ username }}"
   notify:
@@ -40,7 +44,7 @@
   
 - name: Setup ufw firewall
   import_tasks: ufw.yml
-  when: not ansible_bios_version | search("amazon")
+  when: install_firewall
   
 - name: restart machine after setup
   shell: shutdown -r 1

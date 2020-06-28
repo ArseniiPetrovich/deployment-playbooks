@@ -1,11 +1,11 @@
 ---
 - name: Install nginx
-  apt: name=nginx state=present
+  package: name=nginx state=present
   tags: nginx
 
 - name: Install Pip
-  apt:
-    name: "python3-pip"
+  package:
+    name: "{{ (ansible_python_interpreter | default ('python')).split('/')[-1] }}-pip"
     state: present
 
 - name: Ensure OpenSSL dependencies are installed (Ubuntu)
@@ -29,11 +29,20 @@
     - openssl-devel
     - python-devel
   when: ansible_os_family == "RedHat"
-
-- name: Install OpenSSL module
+  
+- name: Install pyOpenSSL
   pip:
+    executable: "pip3"
     name: pyOpenSSL
     state: present
+  when: ansible_os_family == "Debian"
+
+- name: Install pyOpenSSL
+  pip:
+    executable: "pip"
+    name: pyOpenSSL
+    state: present
+  when: ansible_os_family == "RedHat"
 
 - name: Create directory for nginx SSL certificates
   file: path=/etc/nginx/ssl state=directory mode=0755
@@ -50,11 +59,15 @@
     size: 4096
   when: not cert_file_check.stat.exists
 
+- name: Get public IP
+  ipify_facts:
+  register: public_ip
+
 - name: Generate SSL certificate request
   openssl_csr:
     path: /etc/nginx/ssl/server.csr
     privatekey_path: /etc/nginx/ssl/server.key
-    common_name: "{{ ansible_host }}"
+    common_name: "{{ public_ip.ansible_facts.ipify_public_ip }}"
   when: not cert_file_check.stat.exists
 
 - name: Generate self-signed SSL certificate
